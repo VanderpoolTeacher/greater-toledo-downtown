@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A data-driven feature on a decade of gun violence in Toledo, Ohio: the pandemic surge to a 50-year homicide record, the hard-won decline that followed, what it costs a city, and a fragile present.">
+<title>A Decade Under Fire — Greater Toledo Downtown</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --gold: #b8860b;
+    --gold-bright: #d4a520;
+    --ink: #141414;
+    --oxblood: #7a1f1f;
+    --paper: #f7f5f0;
+    --muted: #6b6b6b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Lora', Georgia, serif;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(184,134,11,0.10), transparent 55%),
+      linear-gradient(180deg, #0a0a0a 0%, #161616 60%, #0d0d0d 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 60px 8vw 70px;
+    overflow: hidden;
+  }
+
+  /* faint scattered "shot" marks in the hero backdrop */
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle, rgba(122,31,31,0.55) 0 2px, transparent 3px),
+      radial-gradient(circle, rgba(122,31,31,0.35) 0 2px, transparent 3px),
+      radial-gradient(circle, rgba(255,255,255,0.05) 0 1px, transparent 2px);
+    background-size: 220px 180px, 340px 290px, 120px 140px;
+    background-position: 0 0, 80px 60px, 30px 90px;
+    opacity: 0.6;
+    z-index: 0;
+  }
+
+  .hero-issue {
+    position: absolute;
+    top: 30px;
+    left: 8vw;
+    right: 8vw;
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    z-index: 2;
+  }
+  .hero-issue .gold { color: var(--gold-bright); }
+
+  .hero-inner { position: relative; z-index: 2; max-width: 1000px; }
+
+  .kicker {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--gold-bright);
+    margin-bottom: 22px;
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: clamp(48px, 9vw, 116px);
+    line-height: 0.95;
+    letter-spacing: -1px;
+    margin-bottom: 26px;
+  }
+  .hero h1 em { color: var(--gold-bright); font-style: italic; }
+
+  .hero .deck {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: clamp(17px, 2vw, 23px);
+    line-height: 1.5;
+    color: rgba(255,255,255,0.82);
+    max-width: 760px;
+  }
+
+  .byline {
+    font-family: 'Oswald', sans-serif;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    margin-top: 34px;
+  }
+  .byline span { color: var(--gold-bright); }
+
+  .ai-note {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 300;
+    font-style: italic;
+    letter-spacing: 0.3px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 12px;
+  }
+  .ai-note a { color: rgba(212,165,32,0.7); text-decoration: none; }
+  .ai-note a:hover { color: var(--gold-bright); }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Oswald', sans-serif;
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    z-index: 2;
+  }
+
+  /* ---------- ARTICLE BODY ---------- */
+  article {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 80px 24px 40px;
+  }
+
+  .lede p { font-size: 20px; line-height: 1.75; }
+
+  .lede p:first-of-type::first-letter {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    float: left;
+    font-size: 86px;
+    line-height: 0.78;
+    padding: 6px 14px 0 0;
+    color: var(--oxblood);
+  }
+
+  article p { margin-bottom: 22px; font-size: 18px; }
+  article p + p { text-indent: 1.4em; }
+  .lede p + p { text-indent: 0; }
+
+  .section-head {
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    margin: 64px 0 8px;
+  }
+  .section-num {
+    display: block;
+    font-size: 13px;
+    letter-spacing: 5px;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .section-head h2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.05;
+    text-transform: none;
+    letter-spacing: -0.5px;
+  }
+  .section-head + p { margin-top: 22px; }
+
+  strong { font-weight: 600; }
+
+  /* Pull quote */
+  .pullquote {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: clamp(26px, 4.5vw, 38px);
+    line-height: 1.25;
+    color: var(--ink);
+    border-left: 4px solid var(--gold);
+    padding: 6px 0 6px 28px;
+    margin: 46px 0;
+  }
+
+  /* Big stat callouts */
+  .stat-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin: 40px 0;
+  }
+  .stat {
+    flex: 1 1 140px;
+    background: var(--ink);
+    color: #fff;
+    padding: 26px 22px;
+    border-top: 3px solid var(--gold);
+  }
+  .stat .num {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 700;
+    font-size: 46px;
+    line-height: 1;
+    color: var(--gold-bright);
+  }
+  .stat .lbl {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 1.4;
+    color: rgba(255,255,255,0.75);
+    margin-top: 10px;
+  }
+
+  /* ---------- FIGURES (full-bleed-ish) ---------- */
+  .figure {
+    max-width: 920px;
+    margin: 56px auto;
+    padding: 0 24px;
+  }
+  .figure-inner {
+    background: #fff;
+    border: 1px solid #e4e0d6;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.08);
+    padding: 30px 30px 24px;
+  }
+  .figure.dark .figure-inner { background: var(--ink); border-color: #000; }
+  .fig-kicker {
+    font-family: 'Oswald', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+  .fig-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 1.15;
+    margin-bottom: 20px;
+  }
+  .figure.dark .fig-title { color: #fff; }
+  .chart-box { position: relative; height: 360px; }
+  .chart-box.short { height: 280px; }
+  .fig-source {
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 16px;
+    line-height: 1.5;
+  }
+  .figure.dark .fig-source { color: rgba(255,255,255,0.5); }
+
+  /* Map */
+  #shootingMap {
+    height: 480px;
+    width: 100%;
+    background: #e9e6df;
+    z-index: 0;
+  }
+  .map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: #333;
+  }
+  .map-legend .key { display: flex; align-items: center; gap: 8px; }
+  .map-legend .dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid rgba(0,0,0,0.15);
+  }
+  .leaflet-popup-content-wrapper {
+    border-radius: 2px;
+    font-family: 'Inter', sans-serif;
+  }
+  .leaflet-popup-content { margin: 12px 14px; }
+  .map-pop-t {
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--oxblood);
+    margin-bottom: 4px;
+  }
+  .map-pop-d { font-size: 13px; line-height: 1.45; color: #333; }
+
+  /* Cost blocks */
+  .cost-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .cost-card {
+    border: 1px solid #e4e0d6;
+    background: #fff;
+    padding: 24px;
+  }
+  .cost-card.fatal { border-top: 4px solid var(--oxblood); }
+  .cost-card.nonfatal { border-top: 4px solid var(--gold); }
+  .cost-card .tag {
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .cost-card .big {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 700;
+    font-size: 40px;
+    line-height: 1.05;
+    margin: 8px 0 4px;
+  }
+  .cost-card.fatal .big { color: var(--oxblood); }
+  .cost-card.nonfatal .big { color: var(--gold); }
+  .cost-card .per {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* Sidebar / aside box */
+  .sidebar {
+    background: #1b1b1b;
+    color: #efe9dd;
+    padding: 32px 30px 28px;
+    margin: 48px 0;
+    border-top: 4px solid var(--gold);
+    position: relative;
+  }
+  .sidebar .side-kicker {
+    font-family: 'Oswald', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--gold-bright);
+    margin-bottom: 8px;
+  }
+  .sidebar h3 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: 27px;
+    line-height: 1.1;
+    color: #fff;
+    margin-bottom: 18px;
+  }
+  .sidebar p {
+    font-family: 'Lora', Georgia, serif;
+    font-size: 16px;
+    line-height: 1.65;
+    color: rgba(255,255,255,0.82);
+    margin-bottom: 16px;
+    text-indent: 0;
+  }
+  .sidebar p:last-of-type { margin-bottom: 0; }
+  .money-bar {
+    display: flex;
+    margin: 22px 0;
+    height: 40px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .money-bar .seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #111;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .money-bar .arpa { flex: 6; background: var(--gold); }
+  .money-bar .gf { flex: 1.2; background: var(--gold-bright); border-left: 2px solid #1b1b1b; }
+  .money-cap {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    margin-top: -6px;
+    text-indent: 0;
+  }
+
+  /* Timeline */
+  .timeline { list-style: none; margin: 30px 0 6px; }
+  .timeline li {
+    position: relative;
+    padding: 0 0 26px 78px;
+    border-left: 2px solid #ddd6c8;
+    margin-left: 30px;
+  }
+  .timeline li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  .timeline .yr {
+    position: absolute;
+    left: -29px;
+    top: -3px;
+    width: 58px;
+    text-align: center;
+    background: var(--paper);
+    padding: 2px 0 6px;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--gold);
+  }
+  .timeline .ev-t {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 15px;
+  }
+  .timeline .ev-d { font-size: 16px; color: #333; }
+
+  /* Headlines montage */
+  .headlines {
+    max-width: 920px;
+    margin: 50px auto;
+    padding: 0 24px;
+  }
+  .headlines .hl-head {
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--oxblood);
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 8px;
+    margin-bottom: 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .headlines .hl-head span { color: var(--muted); letter-spacing: 2px; font-weight: 400; }
+  .hl-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: #ddd6c8;
+    border: 1px solid #ddd6c8;
+  }
+  .hl-card {
+    background: #fff;
+    padding: 20px 22px;
+  }
+  .hl-card.lead { grid-column: 1 / -1; background: var(--ink); }
+  .hl-meta {
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gold);
+    margin-bottom: 8px;
+    display: flex;
+    gap: 10px;
+  }
+  .hl-meta .src { color: var(--oxblood); }
+  .hl-card.lead .hl-meta .src { color: var(--gold-bright); }
+  .hl-card.lead .hl-meta { color: rgba(255,255,255,0.5); }
+  .hl-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 17px;
+    line-height: 1.22;
+    color: var(--ink);
+  }
+  .hl-card.lead .hl-title { color: #fff; font-size: 26px; font-weight: 900; }
+  .hl-detail {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+  }
+  .hl-card.lead .hl-detail { color: rgba(255,255,255,0.6); border-top-color: rgba(255,255,255,0.15); }
+  .hl-note {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 18px;
+    text-align: center;
+  }
+  @media (max-width: 620px) { .hl-grid { grid-template-columns: 1fr; } }
+
+  /* footer */
+  .article-foot {
+    max-width: 680px;
+    margin: 70px auto 0;
+    padding: 30px 24px 90px;
+    border-top: 2px solid var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .article-foot h4 {
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-size: 12px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .article-foot a { color: var(--gold); text-decoration: none; }
+
+  @media (max-width: 620px) {
+    .cost-grid { grid-template-columns: 1fr; }
+    article p { font-size: 17px; }
+    .lede p { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="hero-issue">
+    <span>Greater Toledo Downtown &bull; <span class="gold">The Long Read</span></span>
+    <span>Life &bull; Culture &bull; Community</span>
+  </div>
+  <div class="hero-inner">
+    <div class="kicker">A City and Its Wound</div>
+    <h1>A Decade<br>Under <em>Fire</em></h1>
+    <p class="deck">For ten years Toledo has measured itself in gunshots — a surge that doubled the dead, a hard-won retreat, and the question of whether the quiet can hold.</p>
+    <div class="byline">By <span>Greater Toledo Downtown Staff</span> &nbsp;&bull;&nbsp; Charts and Data Visualization by the Editors</div>
+    <div class="ai-note">Portions of this article were generated with AI assistance and reviewed by editors &bull; <a href="#aimethod">how this was made</a></div>
+  </div>
+  <div class="scroll-hint">Scroll &darr;</div>
+</header>
+
+<!-- ============ ARTICLE ============ -->
+<article>
+
+  <!-- LEDE — timeless, undated -->
+  <div class="lede">
+    <p>The call comes the way it always comes. A string of flat reports somewhere past midnight — three, maybe four, close enough together to be one breath — and then the particular silence of a street that knows what it just heard. Porch lights snap on. A dog starts in. Within minutes the block is washed in red and blue, and a length of yellow tape goes up between two utility poles, sagging a little in the middle the way it always does.</p>
+
+    <p>By the time the tape is tied off, the machinery is already in motion. Patrol officers seal the scene; a sergeant takes the corner. Paramedics kneel over someone on the pavement who may not survive the night. A crime-scene unit unpacks its lights. Somewhere a phone rings in a dark bedroom and a mother sits up before she even answers. None of this is new. The neighbors do not gather the way they would for a fire. They watch from doorways, arms crossed, because they have watched before — on this block or one like it, last summer or the summer before that.</p>
+
+    <p>This could be almost any night in Toledo. That is the hard part. Strip away the date and the name and the exact intersection, and the scene repeats with the dreary fidelity of a thing that has become ordinary. To understand what has happened to this city over the past ten years is to understand how a single such night multiplied — and then, against considerable odds, began to grow rarer.</p>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="section-head">
+    <span class="section-num">I — THE SURGE</span>
+    <h2>The decade that doubled the dead</h2>
+  </div>
+
+  <p>For most of the 2010s, violent death in Toledo held to a grim but stable rhythm. The city of roughly 270,000 — Ohio's fourth-largest, a Great Lakes port that still calls itself the Glass City — recorded somewhere in the mid-twenties to high-thirties homicides a year. Two dozen in 2014 and again in 2015. Thirty-seven in 2016. Thirty-nine in 2017. Thirty-seven in each of the two years that followed. It was the kind of number that rarely made the front page twice.</p>
+
+  <p>Then the floor gave way. In 2020, as the pandemic emptied streets and shuttered the institutions that knit a city together, Toledo's homicide count jumped to 61 — and 53 of those killings, roughly seven in eight, were committed with a gun. The next year was worse still. In 2021 the city buried <strong>71 homicide victims</strong>, the most in half a century, breaking a record of 60 that had stood since 1980. In two pandemic years, the annual toll had nearly doubled.</p>
+
+  <div class="pullquote">In two pandemic years the toll nearly doubled — and then, just as sharply, the city began to bring it back down.</div>
+
+  <p>What makes the chart below remarkable is not only the climb but what comes after it. Most cities that spiked in 2020 and 2021 have spent the years since drifting down slowly, a few percentage points at a time. Toledo fell off a cliff in the other direction: 65 in 2022, then 45 in 2023, then 37 in 2024 — an eighteen-percent drop in that final year alone, and a return, statistically, to where the city had sat before the pandemic ever arrived.</p>
+
+  <div class="figure">
+    <div class="figure-inner">
+      <div class="fig-kicker">Figure 1 — Homicides, City of Toledo</div>
+      <div class="fig-title">A flat decade, a pandemic spike, and a hard descent</div>
+      <div class="chart-box"><canvas id="chartHomicides" role="img" aria-label="Line chart of Toledo homicides per year. About 24 in 2014 and 2015, then the high 30s through 2019; a jump to 61 in 2020 and a 50-year record of 71 in 2021; then a steep decline to 65 in 2022, 45 in 2023, and 37 in 2024, holding near 38 in 2025."></canvas></div>
+      <div class="fig-source">Sources: FBI Uniform Crime Reports (2014–2019) and Toledo Police Department year-end counts (2020–2024). *2025 (≈38) is preliminary, from local news reporting, and shown as a dashed segment. The two reporting systems differ slightly — see the note at the foot of this article.</div>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="section-head">
+    <span class="section-num">II — A GUN PROBLEM</span>
+    <h2>Almost always, it is a gun</h2>
+  </div>
+
+  <p>To call this a story about violence is, in Toledo, to call it a story about firearms. The homicide count is only the visible tip of the problem — the killings that succeed. Beneath it sits a far larger body of shootings that do not. For every person shot to death in Toledo, several more are struck and survive: paralyzed, disfigured, or simply lucky, carried into a trauma bay with a wound that will cost a fortune and follow them for life.</p>
+
+  <p>The numbers are stark. Across 2021 through 2023, the city averaged roughly <strong>60 fatal and 276 nonfatal shootings a year</strong>. In 2021, the worst of them, 317 people were shot and lived — nearly one a day, on top of the 71 who did not. The nonfatal count eased to 295 in 2022 and 216 in 2023, tracking the homicide decline. By 2024, the total number of people struck by gunfire — fatal and nonfatal together — had fallen to 201, from 217 the year before.</p>
+
+  <div class="figure dark">
+    <div class="figure-inner">
+      <div class="fig-kicker">Figure 2 — Gun Violence Beyond the Body Count</div>
+      <div class="fig-title" style="color:#fff">For every homicide, four or five more are shot and live</div>
+      <div class="chart-box"><canvas id="chartShootings" role="img" aria-label="Grouped bar chart comparing homicides with nonfatal shootings: 71 homicides and 317 nonfatal shootings in 2021, 65 and 295 in 2022, 45 and 216 in 2023. Nonfatal shootings outnumber homicides roughly four or five to one."></canvas></div>
+      <div class="fig-source">Source: City of Toledo / National Institute for Criminal Justice Reform, <em>The Cost of Gun Violence</em> (2024). Nonfatal-shooting totals for 2021–2023.</div>
+    </div>
+  </div>
+
+  <p>Those who survive are disproportionately young, and disproportionately Black, in a city that is 28 percent Black and 57 percent white — a gap the violence draws in sharp relief. The city's own intervention programs are built explicitly around men aged 18 to 24, the demographic most likely to be standing on either side of a gun. And the geography is just as concentrated: the gunfire clusters along a handful of corridors — the Lagrange Street area to the north, the Scott Park neighborhood, the streets of East Toledo across the river — the same blocks where the city has since wired up gunshot-detection sensors to put officers on a shooting before anyone thinks to call 911.</p>
+
+  <div class="figure">
+    <div class="figure-inner">
+      <div class="fig-kicker">Figure 2b — Where the Shooting Concentrates</div>
+      <div class="fig-title">A few corridors carry most of the gunfire</div>
+      <div id="shootingMap"></div>
+      <div class="map-legend">
+        <span class="key"><span class="dot" style="background:#7a1f1f"></span> Identified gun-violence hot-spot area</span>
+        <span class="key"><span class="dot" style="background:#b8860b"></span> Downtown / city center</span>
+      </div>
+      <div class="fig-source">Hot-spot areas reflect the corridors identified in the City of Toledo / NICJR gun-violence report and the city's ShotSpotter deployment zones (Lagrange corridor, Scott Park, East Toledo). Shaded areas are approximate neighborhood extents, not precise incident locations. Basemap &copy; OpenStreetMap contributors, &copy; CARTO.</div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="section-head">
+    <span class="section-num">III — THE COST</span>
+    <h2>What a single shot costs a city</h2>
+  </div>
+
+  <p>In 2024 the city commissioned an unusual study: not how many were shot, but what each shooting <em>costs</em> — in dollars, billed to the public. The accounting is brutal in its specificity. A fatal shooting summons up to sixteen officers, a fire crew, paramedics, a crime-scene unit, the coroner. Then comes the investigation, the prosecution, the public defense, court proceedings that drag on for about two years, and, often, a decade or more of incarceration. Add the lost tax revenue of the dead and the imprisoned, and the bill for a single fatal shooting comes to nearly <strong>$884,000</strong>.</p>
+
+  <p>A nonfatal shooting is, perversely, not much cheaper. When a victim survives, the hospital costs explode — emergency surgery, a long stay, rehabilitation, all of it frequently uninsured. Forty percent of Toledo's gunshot victims are uninsured or on Medicaid, which means the public absorbs the difference. The study put the cost of a single nonfatal shooting at more than <strong>$572,000</strong>.</p>
+
+  <div class="figure">
+    <div class="figure-inner">
+      <div class="fig-kicker">Figure 3 — The Price of a Trigger Pull</div>
+      <div class="fig-title">The government cost of one shooting in Toledo</div>
+      <div class="cost-grid">
+        <div class="cost-card fatal">
+          <div class="tag">Fatal Shooting</div>
+          <div class="big">$883,772</div>
+          <div class="per">per incident, assuming one suspect</div>
+        </div>
+        <div class="cost-card nonfatal">
+          <div class="tag">Nonfatal Shooting</div>
+          <div class="big">$572,038</div>
+          <div class="per">per incident, assuming one suspect</div>
+        </div>
+      </div>
+      <div class="fig-source">Source: National Institute for Criminal Justice Reform, commissioned by the City of Toledo, <em>The Cost of Gun Violence</em> (2024). Figures use the low end of each cost range and count only direct government expenditure.</div>
+    </div>
+  </div>
+
+  <p>And that is only the public ledger. It does not count what a shooting does to the block around it. A single homicide, researchers have found, lowers the sale price of nearby homes by more than two percent — equity quietly drained from the very neighborhoods least able to spare it. It does not count the businesses that leave, the children who witness, the trauma that the public-health literature now treats as a transmissible thing, clustering on certain streets the way a contagious disease clusters among the unvaccinated. By the city's own math, cutting gun violence by just a fifth would save taxpayers more than $42 million a year. The human savings are harder to price.</p>
+
+  <!-- SECTION 4 -->
+  <div class="section-head">
+    <span class="section-num">IV — WHY HERE</span>
+    <h2>Poverty, proximity, and a flood of guns</h2>
+  </div>
+
+  <p>No single cause explains a decade of violence, but in Toledo the conversation begins, almost always, with poverty. In 2022 the city's poverty rate stood at <strong>23.3 percent</strong> — double the national figure of 11.5 percent, and high enough to rank Toledo among the poorest large cities in the country. Poverty does not pull a trigger, but it sets the table: concentrated disadvantage, frayed institutions, fewer exits, and the chronic stress that turns a small dispute into a fatal one.</p>
+
+  <p>The result shows up in the comparison that matters most. In 2022, Toledo's violent-crime rate reached roughly <strong>1,146 incidents per 100,000 residents</strong> — about three times the national average of 381. This is not a city that is dangerous by the standards of its peers and safe by some absolute measure. By the national yardstick, it has been carrying a load several times heavier than most.</p>
+
+  <div class="figure">
+    <div class="figure-inner">
+      <div class="fig-kicker">Figure 4 — Toledo Against the Nation</div>
+      <div class="fig-title">Roughly three times the national violent-crime rate — and twice the poverty</div>
+      <div class="chart-box short"><canvas id="chartVsNation" role="img" aria-label="Bar chart showing Toledo relative to the U.S. average: its violent-crime rate is about three times the national average, and its poverty rate about twice."></canvas></div>
+      <div class="fig-source">Sources: FBI Crime Data Explorer (violent-crime rate per 100,000, 2022) and U.S. Census Bureau (poverty rate, 2022), as compiled in the City of Toledo gun-violence report.</div>
+    </div>
+  </div>
+
+  <p>Layered onto that is the simplest variable of all: the guns themselves. The pandemic years brought a national surge in firearm sales and firearm carrying, and Toledo, like most American cities, found more disputes being settled with a weapon close at hand. The share of homicides committed with a gun in Toledo runs consistently around seven in eight. When the underlying conflicts did not change but the lethality of the average argument did, the body count followed.</p>
+
+  <!-- SECTION 5 -->
+  <div class="section-head">
+    <span class="section-num">V — THE TURN</span>
+    <h2>How Toledo pulled back from the brink</h2>
+  </div>
+
+  <p>Here is where Toledo's story diverges from the national one. The decline after 2021 was not an accident of statistics, and it was not subtle. Over three years the city cut its homicides nearly in half. The question every official, every criminologist, and every grieving family wants answered is the same: <em>why?</em></p>
+
+  <p>The city credits a combination. It put more officers on the street, adding some fifty to the force since 2018. It got dramatically better at solving the killings it did have: the homicide clearance rate climbed from under 58 percent in 2020 to better than 72 percent by 2022 — a signal, to anyone considering a retaliatory shooting, that an arrest had become likelier than not.</p>
+
+  <div class="figure">
+    <div class="figure-inner">
+      <div class="fig-kicker">Figure 5 — Solving the Cases</div>
+      <div class="fig-title">Toledo's homicide clearance rate, 2020–2022</div>
+      <div class="chart-box short"><canvas id="chartClearance" role="img" aria-label="Bar chart of Toledo's homicide clearance rate: 57.9 percent in 2020, 58.2 percent in 2021, and 72.1 percent in 2022."></canvas></div>
+      <div class="fig-source">Source: Toledo Police Department, as reported in the City of Toledo gun-violence report (2024).</div>
+    </div>
+  </div>
+
+  <p>But the part the city most wants to talk about is the part that does not wear a badge. Beginning in late 2021, Toledo built out a public-health approach to violence — the idea that shootings spread like infection and can be interrupted like one. It launched Save Our Community, a program aimed squarely at the 18-to-24-year-old men most at risk. In 2023 it stood up a Mayor's Office of Neighborhood Safety and Engagement, hiring "violence interrupters" — people with credibility on the same blocks where the shooting happens — to step between a grievance and its retaliation. It expanded gunshot-detection sensors across the corridors where the violence concentrates. And it poured more than $7 million into youth programming — summer camps, after-school slots, teen jobs — while winning a separate $2 million federal grant to build out the machinery of intervention itself.</p>
+
+  <div class="stat-row">
+    <div class="stat"><div class="num">+50</div><div class="lbl">police officers added to the force since 2018</div></div>
+    <div class="stat"><div class="num">72%</div><div class="lbl">homicide clearance rate by 2022, up from 58%</div></div>
+    <div class="stat"><div class="num">$7.2M</div><div class="lbl">invested in youth programs across the city since 2021</div></div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="side-kicker">Following the Money</div>
+    <h3>Where the youth money went — and ran out</h3>
+    <p>Of all the spending the city points to, the most-cited figure is the $7.2 million poured into youth programming since 2021 — summer camps, after-school programs, employment for teenagers. Follow it, though, and a more fragile story emerges. Roughly $6 million of that total was never Toledo's money to begin with: it was federal pandemic relief, American Rescue Plan dollars, spent at a rate of about $2 million a summer for three summers running.</p>
+    <div class="money-bar">
+      <span class="seg arpa">~$6M &nbsp;Federal ARPA &middot; 2022–24</span>
+      <span class="seg gf">$1.2M&nbsp;City</span>
+    </div>
+    <p class="money-cap">The $7.2M total ≈ three summers of expiring federal relief plus one year of city general-fund backfill.</p>
+    <p>When that aid expired at the end of 2024, the city hit a cliff. To keep the programs alive into 2025, City Council carved $1.2 million out of the general fund and, for the first time, opened its grants to year-round programming rather than summer alone. The federal scaffolding had come down; the question was whether the city could hold the weight on its own.</p>
+    <p>The reach is real, but oversold. The city says the money has funded 322 programs serving "nearly 200,000 children and teens" — a figure that, against a population of 270,000, can only count repeat visits, not individual kids. In 2025 the programs served a more sober 30,021 young people, and council members openly pressed administrators on whether the effort could sustain its scale. Whether any of it bent the homicide curve is, like much here, asserted more confidently than it can be proven.</p>
+  </aside>
+
+  <ul class="timeline">
+    <li><span class="yr">'18</span><div class="ev-t">A bigger force</div><div class="ev-d">The Toledo Police Department begins a multi-year expansion, adding roughly 50 officers.</div></li>
+    <li><span class="yr">'19</span><div class="ev-t">First sensors go live</div><div class="ev-d">Gunshot-detection coverage launches along the Lagrange Street corridor.</div></li>
+    <li><span class="yr">'21</span><div class="ev-t">Save Our Community</div><div class="ev-d">As homicides hit a 50-year record, the city launches a focused intervention program for young men 18–24.</div></li>
+    <li><span class="yr">'23</span><div class="ev-t">MONSE & violence interrupters</div><div class="ev-d">The Mayor's Office of Neighborhood Safety and Engagement formalizes a public-health approach to violence.</div></li>
+  </ul>
+
+  <p>Untangling which of these moved the needle — and how much — is genuinely hard, and the city's most triumphant framings come, it should be said, from press releases with a political interest in the answer. But the underlying counts are corroborated across the police department, the local press, and independent trackers. Something worked. The drop is real.</p>
+
+  <!-- SECTION 6 -->
+  <div class="section-head">
+    <span class="section-num">VI — THE FRAGILE PRESENT</span>
+    <h2>The quiet that has to hold</h2>
+  </div>
+
+  <p>For the first half of 2025, it looked as though the descent would simply continue. Midway through the year the city reported homicides down another 21 percent and the number of people shot down nearly 29 percent against the same stretch of 2024. Officials allowed themselves to talk about a city that was safer than it had been in a generation.</p>
+
+  <p>Then July came, and with it a spike that erased much of the cushion. By the end of 2025 the homicide count had climbed back to roughly 38 — essentially flat against the prior year. The line, after four years of falling, had finally stopped falling. Whether that is a plateau, a pause, or the front edge of a new climb is the question the next set of year-end statistics will answer.</p>
+
+  <div class="pullquote">Four years of falling — and then the line simply stopped.</div>
+
+  <p>It is worth being honest about the numbers themselves, because Toledo keeps more than one set. The police department's year-end tallies, the Toledo Blade's independent homicide tracker, and the FBI's national crime data rarely agree to the digit — they classify justifiable killings, vehicular deaths, and reclassified cases differently, so that a year logged as 37 by one count is 38 by another and 32 by a third. The disagreements are small. The shape they describe is not in dispute: a flat decade, a pandemic doubling, a steep and deliberate decline, and now an uncertain floor.</p>
+
+  <p>And then, before a single year-end number could be tallied, the present made its own argument. On the evening of Saturday, June 6, 2026, the streets around Delaware and Glenwood were full — thousands of people gathered for the Old West End Festival, an annual celebration in one of Toledo's most cherished historic neighborhoods, a weekend of live music and food stalls and children weaving between the great Victorian porches. Just after 5:30, near the arboretum, at least two gunmen opened fire, apparently at one another, into the crowd. Twelve people were hit. The youngest was fourteen years old. The oldest was sixty-one.</p>
+
+  <p>That no one was killed is a mercy of trajectory, not of intent. Days later the shooters were still at large, and the city's public-safety director was reduced to imploring residents to comb their own phones for footage of the crowd. The festival's final day was canceled. Grief counselors set up in a Presbyterian church down the block. A city that had spent four years learning to count its way out of violence was, once again, counting the wounded.</p>
+
+  <div class="headlines">
+    <div class="hl-head"><span>Toledo, in the headlines</span><span>2026</span></div>
+    <div class="hl-grid">
+      <div class="hl-card lead">
+        <div class="hl-meta"><span class="src">13abc</span><span>June 6, 2026</span></div>
+        <div class="hl-title">At least a dozen injured in Toledo festival mass shooting; police searching for suspects</div>
+        <div class="hl-detail">Old West End Festival, Delaware &amp; Glenwood · 12 wounded, ages 14 to 61 · no arrests as of publication</div>
+      </div>
+      <div class="hl-card">
+        <div class="hl-meta"><span class="src">WTOL</span><span>Jan. 10, 2026</span></div>
+        <div class="hl-title">Shooting victim in central Toledo homicide identified, no suspect in custody</div>
+        <div class="hl-detail">Man, 34 · Rockingham Street, central Toledo</div>
+      </div>
+      <div class="hl-card">
+        <div class="hl-meta"><span class="src">13abc</span><span>April 8, 2026</span></div>
+        <div class="hl-title">Man shot at Talmadge Rd. apartment complex dies of injuries, police say</div>
+        <div class="hl-detail">Man, 27 · Orchard Farms Apartments, West Toledo</div>
+      </div>
+      <div class="hl-card">
+        <div class="hl-meta"><span class="src">The Blade</span><span>April 28, 2026</span></div>
+        <div class="hl-title">Man found fatally shot on North Toledo sidewalk</div>
+        <div class="hl-detail">Man, 44 · Bronson Avenue, North Toledo</div>
+      </div>
+    </div>
+    <div class="hl-note">A handful of the gun-violence incidents reported in Toledo between January and June 2026 — among many more. The festival shooting drew national coverage; the others, like most, were local news for a day. Several remained unsolved as of publication.</div>
+  </div>
+
+  <p>Which returns us to the street, and the tape sagging between two poles. The machinery that assembles around a Toledo shooting has not changed in ten years. What has changed — what a city full of officers and interrupters and grieving parents managed to change, for a while at least — is how often it has to be summoned. The night that opened this story was meant to stand for any night. On the sixth of June it had a date, an address, and twelve names. The work now is to keep it from having more.</p>
+
+</article>
+
+<div class="article-foot">
+  <h4>A Note on the Numbers</h4>
+  <p>Homicide figures for 2014–2019 are drawn from FBI Uniform Crime Reports; figures for 2020 onward are Toledo Police Department year-end counts. The two systems diverge modestly because they classify justifiable, vehicular, and later-reclassified deaths differently — the 2024 total, for example, is 37 by the police department, 38 by the Toledo Blade's tracker, and 32 in FBI data. The 2025 year-end figure is preliminary and drawn from local news reporting. Gun-violence, cost, poverty, and clearance-rate data come from the City of Toledo and the National Institute for Criminal Justice Reform's 2024 report, <em>The Cost of Gun Violence</em>, and from FBI Crime Data Explorer and U.S. Census figures cited therein. Where the city's own framing is self-interested, we have said so. Reporting on the 2026 incidents — the June 6 Old West End Festival shooting and three individual homicides reported earlier that year — reflects active investigations as of publication, drawn from 13abc, WTOL, The Blade, CNN, and the City of Toledo; details may change as the cases develop.</p>
+
+  <h4 id="aimethod" style="margin-top:34px">How This Article Was Made</h4>
+  <p>This feature was produced by the <em>Greater Toledo Downtown</em> editorial team with the assistance of Claude, an AI research-and-writing tool from Anthropic, working under editorial direction and review. The process ran in three stages. First, a structured research pass gathered statistics on a decade of violence in Toledo and cross-checked each figure against primary sources — FBI Uniform Crime Reports, Toledo Police Department year-end counts, the NICJR <em>Cost of Gun Violence</em> report, U.S. Census data, and contemporaneous local news from 13abc, WTOL, and The Blade. Numbers that could not be corroborated across sources were discarded rather than published; a handful of widely repeated but unverifiable figures were deliberately left out.</p>
+  <p>Second, the verified dataset was shaped into a narrative — a "human texture plus hard data" approach — with a deliberately timeless opening so the piece would read as the recurring reality of gun violence rather than a single news event. Editors set the voice, the structure, and the judgments about where official framing deserved skepticism. Third, the charts, the hot-spot map, and the page itself were built as a single self-contained HTML file, with data visualizations rendered through the open-source Chart.js and Leaflet libraries and every figure labeled with its source.</p>
+  <p>The statistics, sourcing, and editorial judgments in this article were checked by a human editor before publication. AI tools accelerated the research and assembly; they did not replace editorial responsibility for what appears here.</p>
+
+  <p style="margin-top:14px">Greater Toledo Downtown &bull; The Long Read</p>
+</div>
+
+<script>
+  // ---- Shared theme ----
+  const GOLD = '#b8860b', GOLD_BRIGHT = '#d4a520', INK = '#141414', OX = '#7a1f1f';
+  Chart.defaults.font.family = "'Inter', sans-serif";
+  Chart.defaults.font.size = 13;
+  Chart.defaults.color = '#555';
+
+  // ---- Fig 1: Homicides line/area 2014–2024 ----
+  const hYears = ['2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2025*'];
+  const hVals  = [24, 24, 37, 39, 37, 37, 61, 71, 65, 45, 37, 38];
+  const lastIdx = hVals.length - 1;
+  const ctx1 = document.getElementById('chartHomicides').getContext('2d');
+  const grad = ctx1.createLinearGradient(0, 0, 0, 360);
+  grad.addColorStop(0, 'rgba(122,31,31,0.35)');
+  grad.addColorStop(1, 'rgba(122,31,31,0.02)');
+  new Chart(ctx1, {
+    type: 'line',
+    data: { labels: hYears, datasets: [{
+      data: hVals, borderColor: OX, backgroundColor: grad, fill: true,
+      borderWidth: 3, tension: 0.3,
+      segment: { borderDash: c => c.p1DataIndex === lastIdx ? [5, 4] : undefined },
+      pointBackgroundColor: hVals.map((v, i) => v === 71 ? OX : (i === lastIdx ? 'rgba(122,31,31,0.15)' : '#fff')),
+      pointBorderColor: OX, pointBorderWidth: 2,
+      pointRadius: hVals.map((v, i) => v === 71 ? 7 : (i === lastIdx ? 5 : 4)),
+      pointHoverRadius: 8
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => c.parsed.y + ' homicides' + (c.dataIndex === lastIdx ? ' (preliminary)' : '') } }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#eee' }, title: { display: true, text: 'Homicides', color: '#888' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // ---- Fig 2: Homicides vs nonfatal shootings (dark) ----
+  const ctx2 = document.getElementById('chartShootings').getContext('2d');
+  new Chart(ctx2, {
+    type: 'bar',
+    data: { labels: ['2021','2022','2023'], datasets: [
+      { label: 'Homicides', data: [71, 65, 45], backgroundColor: GOLD_BRIGHT, borderRadius: 2 },
+      { label: 'Nonfatal shootings', data: [317, 295, 216], backgroundColor: OX, borderRadius: 2 }
+    ]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#ddd', boxWidth: 14 } },
+        tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.parsed.y } }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#bbb' } },
+        x: { grid: { display: false }, ticks: { color: '#ddd', font: { size: 14 } } }
+      }
+    }
+  });
+
+  // ---- Fig 4: Toledo as a multiple of the U.S. average ----
+  const ctx4 = document.getElementById('chartVsNation').getContext('2d');
+  const vsActuals = [
+    'Toledo 1,146 vs. U.S. 381 per 100,000',
+    'Toledo 23.3% vs. U.S. 11.5%'
+  ];
+  new Chart(ctx4, {
+    type: 'bar',
+    data: {
+      labels: ['Violent-crime rate', 'Poverty rate'],
+      datasets: [{
+        data: [3.0, 2.0],
+        backgroundColor: [OX, GOLD],
+        borderRadius: 3,
+        barPercentage: 0.6
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => [c.parsed.x.toFixed(1) + '× the U.S. average', vsActuals[c.dataIndex]] } }
+      },
+      scales: {
+        x: {
+          beginAtZero: true, suggestedMax: 3.4,
+          grid: { color: '#eee' },
+          ticks: { callback: v => v + '×' },
+          title: { display: true, text: 'multiple of the U.S. average  (U.S. = 1×)', color: '#999', font: { size: 11 } }
+        },
+        y: {
+          grid: { display: false },
+          afterFit: scale => { scale.width = 130; },
+          ticks: { font: { size: 13 }, autoSkip: false, crossAlign: 'far' }
+        }
+      }
+    }
+  });
+
+  // ---- Fig 2b: Hot-spot zone map ----
+  (function () {
+    const map = L.map('shootingMap', { scrollWheelZoom: false, attributionControl: true })
+      .setView([41.652, -83.538], 12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      subdomains: 'abcd', maxZoom: 19
+    }).addTo(map);
+
+    // Verified hot-spot corridors (approximate neighborhood centers / extents)
+    const zones = [
+      { name: 'Lagrange Street Corridor', note: 'Old North End. Among the first areas covered by gunshot-detection sensors (2019).', lat: 41.678, lng: -83.535, r: 1100 },
+      { name: 'Scott Park Area', note: 'Central-south Toledo; a designated ShotSpotter zone (2021).', lat: 41.629, lng: -83.583, r: 1100 },
+      { name: 'East Toledo', note: 'Across the Maumee River; gunshot-detection coverage added in 2022.', lat: 41.656, lng: -83.503, r: 1300 }
+    ];
+    zones.forEach(z => {
+      L.circle([z.lat, z.lng], {
+        radius: z.r, color: OX, weight: 1.5, fillColor: OX, fillOpacity: 0.28
+      }).addTo(map)
+        .bindPopup('<div class="map-pop-t">' + z.name + '</div><div class="map-pop-d">' + z.note + '</div>');
+    });
+
+    // Downtown reference marker
+    L.circleMarker([41.6528, -83.5379], {
+      radius: 7, color: '#fff', weight: 2, fillColor: GOLD, fillOpacity: 1
+    }).addTo(map).bindPopup('<div class="map-pop-t" style="color:#b8860b">Downtown Toledo</div><div class="map-pop-d">City center, for reference.</div>');
+
+    map.fitBounds([[41.61, -83.61], [41.70, -83.47]]);
+    setTimeout(() => map.invalidateSize(), 300);
+  })();
+
+  // ---- Fig 5: Clearance rate ----
+  const ctx5 = document.getElementById('chartClearance').getContext('2d');
+  new Chart(ctx5, {
+    type: 'bar',
+    data: { labels: ['2020','2021','2022'], datasets: [{
+      data: [57.89, 58.21, 72.13],
+      backgroundColor: [GOLD, GOLD, GOLD_BRIGHT], borderRadius: 3
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => c.parsed.y + '% of homicides cleared' } }
+      },
+      scales: {
+        y: { beginAtZero: true, max: 100, grid: { color: '#eee' }, ticks: { callback: v => v + '%' } },
+        x: { grid: { display: false }, ticks: { font: { size: 14 } } }
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
